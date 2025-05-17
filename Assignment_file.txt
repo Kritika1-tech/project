@@ -1,0 +1,151 @@
+1) Customer Risk Analysis: Identify customers with low credit scores and high-risk loans to predict 
+potential defaults and prioritize risk mitigation strategies.
+
+SELECT 
+    c.customer_id, 
+    c.name, 
+    c.age, 
+    c.income, 
+    c.credit_score, 
+    l.loan_id, 
+    l.loan_amount, 
+    l.loan_purpose, 
+    l.default_rise
+FROM customer c
+JOIN loan_data l ON c.customer_id = l.customer_id
+WHERE c.credit_score < 600  -- Low credit score threshold
+
+2) Loan Purpose Insights: Determine the most popular loan purposes and their associated 
+revenues to align financial products with customer demands.
+
+
+SELECT 
+    l.loan_purpose, 
+    COUNT(l.loan_id) AS total_loans, 
+    SUM(l.loan_amount) AS total_revenue
+FROM Loan_data l
+GROUP BY l.loan_purpose
+ORDER BY total_loans DESC, total_revenue DESC;
+
+3) High-Value Transactions: Detect transactions that exceed 30% of their respective loan amounts 
+to flag potential fraudulent activities.
+
+SELECT 
+    t.transaction_id, 
+    t.loadn_id, 
+    t.customer_id, 
+    t.transaction_amount, 
+    l.loan_amount, 
+    (t.transaction_amount / l.loan_amount) * 100 AS transaction_percentage
+FROM transaction t
+JOIN loan_data l ON t.loadn_id = l.loan_id
+WHERE (t.transaction_amount / l.loan_amount) > 0.30
+ORDER BY transaction_percentage DESC;
+
+4) Missed EMI Count: Analyze the number of missed EMIs per loan to identify loans at risk of 
+default and suggest intervention strategies.
+
+SELECT 
+    l.loan_id, 
+    l.customer_id, 
+    l.loan_amount, 
+    COUNT(t.transaction_id) AS missed_emi_count
+FROM loan_data l
+LEFT JOIN transaction t ON l.loan_id = t.loadn_id
+WHERE t.transaction_type = 'Missed EMI'
+GROUP BY l.loan_id, l.customer_id, l.loan_amount
+ORDER BY missed_emi_count DESC;
+
+5) Regional Loan Distribution: Examine the geographical distribution of loan disbursements to 
+assess regional trends and business opportunities.
+
+SELECT 
+    c.address AS region,
+    COUNT(l.loan_id) AS total_loans, 
+    SUM(l.loan_amount) AS total_disbursed_amount
+FROM Customer c
+JOIN loan_data l ON c.customer_id = l.customer_id
+GROUP BY c.address
+ORDER BY total_disbursed_amount DESC;
+
+6) Loyal Customers: List customers who have been associated with Cross River Bank for over five 
+years and evaluate their loan activity to design loyalty programs. 
+
+SELECT 
+    c.customer_id, 
+    c.name, 
+    c.customer_since, 
+    DATEDIFF(CURDATE(), c.customer_since) / 365 AS years_with_bank,
+    COUNT(l.loan_id) AS total_loans, 
+    SUM(l.loan_amount) AS total_loan_amount
+FROM customer c
+JOIN loan_data l ON c.customer_id = l.customer_id
+WHERE DATEDIFF(CURDATE(), c.customer_since) >= 5 * 365
+GROUP BY c.customer_id, c.name, c.customer_since
+ORDER BY years_with_bank DESC, total_loan_amount DESC;
+
+7) High-Performing Loans: Identify loans with excellent repayment histories to refine lending 
+policies and highlight successful products.
+
+SELECT 
+    l.loan_id, 
+    l.customer_id, 
+    l.loan_amount, 
+    COUNT(t.transaction_id) AS total_payments, 
+    SUM(t.transaction_amount) AS total_paid,
+    (SUM(t.transaction_amount) / l.loan_amount) * 100 AS repayment_percentage
+FROM loan_data l
+JOIN transaction t ON l.loan_id = t.loadn_id
+WHERE t.transaction_type = 'EMI Payment'
+GROUP BY l.loan_id, l.customer_id, l.loan_amount
+HAVING repayment_percentage >= 90
+ORDER BY repayment_percentage DESC;
+
+8) Age-Based Loan Analysis: Analyze loan amounts disbursed to customers of different age groups 
+to design targeted financial products.
+
+SELECT 
+    CASE 
+        WHEN c.age BETWEEN 18 AND 25 THEN '18-25'
+        WHEN c.age BETWEEN 26 AND 35 THEN '26-35'
+        WHEN c.age BETWEEN 36 AND 45 THEN '36-45'
+        WHEN c.age BETWEEN 46 AND 60 THEN '46-60'
+        ELSE '60+'
+    END AS age_group,
+    COUNT(l.loan_id) AS total_loans,
+    SUM(l.loan_amount) AS total_disbursed_amount,
+    AVG(l.loan_amount) AS avg_loan_amount
+FROM customer c
+JOIN loan_data l ON c.customer_id = l.customer_id
+GROUP BY age_group
+ORDER BY total_disbursed_amount DESC;
+
+9) Seasonal Transaction Trends: Examine transaction patterns over years and months to identify 
+seasonal trends in loan repayments.
+
+SELECT 
+    YEAR(t.transaction_date) AS transaction_year, 
+    MONTH(t.transaction_date) AS transaction_month, 
+    COUNT(t.transaction_id) AS total_transactions, 
+    SUM(t.transaction_amount) AS total_repayment_amount
+FROM transaction t
+WHERE t.transaction_type = 'EMI Payment'
+GROUP BY transaction_year, transaction_month
+ORDER BY transaction_year DESC, transaction_month ASC;
+
+10) Fraud Detection: Highlight potential fraud by identifying mismatches between customer address 
+locations and transaction IP locations. Advanced 
+
+SELECT 
+    c.customer_id, 
+    c.name, 
+    c.address AS registered_address, 
+    t.ip_location AS transaction_location, 
+    t.transaction_amount, 
+    t.transaction_date
+FROM Customer c
+JOIN Transaction t ON c.customer_id = t.customer_id
+WHERE c.address <> t.ip_location
+ORDER BY t.transaction_date DESC;
+
+
